@@ -1,788 +1,321 @@
-import React, { useState, useEffect } from 'react';
-import { motion, useAnimation, useInView } from 'framer-motion';
-import {
-  Menu,
-  X,
-  Phone,
-  MapPin,
-  Clock,
-  Star,
-  ChevronRight,
-  Heart,
-  Facebook,
-  Instagram,
-  Twitter,
-  Send,
-  ShoppingBag,
-  Navigation,
-  Calendar
-} from 'lucide-react';
+import React, { useState, useRef, useEffect } from "react";
+import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
 
-// Custom hook for scroll animations
-const useScrollAnimation = () => {
-  const controls = useAnimation();
-  const ref = React.useRef(null);
-  const inView = useInView(ref, { once: true, threshold: 0.2 });
+// Particle Background
+const Particles = () => {
+  const canvasRef = useRef(null);
 
   useEffect(() => {
-    if (inView) {
-      controls.start('visible');
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    let particles = [];
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+
+    for (let i = 0; i < 80; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 2,
+        dx: Math.random() - 0.5,
+        dy: Math.random() - 0.5
+      });
     }
-  }, [controls, inView]);
 
-  return { ref, controls, inView };
-};
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "rgba(255,255,255,0.5)";
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 50 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } }
-};
+      particles.forEach(p => {
+        p.x += p.dx;
+        p.y += p.dy;
 
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.2 } }
-};
+        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
 
-// Navigation Component
-const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
 
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+      requestAnimationFrame(animate);
+    };
+
+    animate();
+    return () => window.removeEventListener("resize", resize);
   }, []);
 
-  const navLinks = ['Home', 'About', 'Menu', 'Gallery', 'Reviews', 'Contact'];
-
-  return (
-    <motion.nav
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5 }}
-      className={`fixed w-full z-50 transition-all duration-300 ${
-        scrolled ? 'bg-black/90 backdrop-blur-md shadow-lg' : 'bg-transparent'
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
-          <div className="flex items-center space-x-2">
-            <Heart className="h-8 w-8 text-amber-500" fill="currentColor" />
-            <span className="text-2xl font-bold text-white tracking-tight">
-              The Canopy <span className="text-amber-500">18</span>
-            </span>
-          </div>
-
-          {/* Desktop Menu */}
-          <div className="hidden md:flex space-x-8">
-            {navLinks.map((link) => (
-              <a
-                key={link}
-                href={`#${link.toLowerCase()}`}
-                className="text-white hover:text-amber-400 transition-colors duration-200 font-medium"
-              >
-                {link}
-              </a>
-            ))}
-          </div>
-
-          <div className="hidden md:block">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="bg-amber-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-amber-700 transition shadow-lg"
-            >
-              Order Now
-            </motion.button>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
-            <button onClick={() => setIsOpen(!isOpen)} className="text-white">
-              {isOpen ? <X size={28} /> : <Menu size={28} />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-black/95 backdrop-blur-md rounded-2xl mt-4 p-6"
-          >
-            <div className="flex flex-col space-y-4">
-              {navLinks.map((link) => (
-                <a
-                  key={link}
-                  href={`#${link.toLowerCase()}`}
-                  onClick={() => setIsOpen(false)}
-                  className="text-white hover:text-amber-400 transition py-2 text-lg"
-                >
-                  {link}
-                </a>
-              ))}
-              <button className="bg-amber-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-amber-700 transition w-full">
-                Order Now
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </div>
-    </motion.nav>
-  );
+  return <canvas ref={canvasRef} className="fixed inset-0 z-0 opacity-30" />;
 };
 
-// Hero Section
-const Hero = () => {
-  return (
-    <section
-      id="home"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
-    >
-      {/* Background Image with Overlay */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: "url('https://images.unsplash.com/photo-1555939594-58d7cb561ad1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1887&q=80')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        }}
-      >
-        <div className="absolute inset-0 bg-black/60"></div>
-      </div>
+export default function App() {
+  const { scrollYProgress } = useScroll();
+  const yBg = useTransform(scrollYProgress, [0, 1], [0, -400]);
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <span className="inline-block px-4 py-1 bg-amber-600/20 backdrop-blur-sm rounded-full text-amber-400 text-sm font-semibold mb-6">
-            Est. 2024
-          </span>
-          <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-            Authentic Soul Food
-            <br />
-            with <span className="text-amber-500">Real Flavor</span>
-          </h1>
-          <p className="text-xl md:text-2xl text-gray-200 mb-10 max-w-3xl mx-auto">
-            Slow-smoked BBQ, homestyle sides, and that warm family vibe. 
-            Come taste the love at The Canopy 18.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="bg-amber-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-amber-700 transition shadow-xl flex items-center justify-center gap-2"
-            >
-              View Menu <ChevronRight size={20} />
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-white hover:text-black transition shadow-xl"
-            >
-              Order Now
-            </motion.button>
-          </div>
-        </motion.div>
-      </div>
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [25, -25]));
+  const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-25, 25]));
 
-      {/* Scroll Indicator */}
-      <motion.div
-        animate={{ y: [0, 10, 0] }}
-        transition={{ repeat: Infinity, duration: 1.5 }}
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-      >
-        <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-white rounded-full mt-2"></div>
-        </div>
-      </motion.div>
-    </section>
-  );
-};
-
-// About Section
-const About = () => {
-  const { ref, controls } = useScrollAnimation();
-
-  return (
-    <section id="about" className="py-24 bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          ref={ref}
-          animate={controls}
-          initial="hidden"
-          variants={staggerContainer}
-          className="grid md:grid-cols-2 gap-12 items-center"
-        >
-          <motion.div variants={fadeUp}>
-            <span className="text-amber-600 font-semibold text-sm uppercase tracking-wide">Our Story</span>
-            <h2 className="text-4xl md:text-5xl font-bold mt-2 mb-6 text-gray-900 dark:text-white">
-              Where Flavor Meets <span className="text-amber-600">Tradition</span>
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 text-lg mb-4 leading-relaxed">
-              The Canopy 18 was born from a deep love for Southern cooking and a desire to create a space 
-              where everyone feels like family. Our recipes have been passed down through generations, 
-              perfected with slow smoking and love.
-            </p>
-            <p className="text-gray-600 dark:text-gray-300 text-lg mb-6 leading-relaxed">
-              From our signature BBQ ribs to creamy mac & cheese, every dish tells a story of authenticity, 
-              quality, and soul. We source locally and smoke low & slow — because good food takes time.
-            </p>
-            <div className="flex items-center gap-4">
-              <div className="flex -space-x-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <img
-                    key={i}
-                    src={`https://randomuser.me/api/portraits/men/${i}.jpg`}
-                    alt="Team member"
-                    className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-800"
-                  />
-                ))}
-              </div>
-              <span className="text-gray-700 dark:text-gray-300 font-medium">+ 2000 happy customers</span>
-            </div>
-          </motion.div>
-          <motion.div variants={fadeUp} className="relative">
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-              <img
-                src="https://images.unsplash.com/photo-1600891964599-f61ba0e24092?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                alt="Family dining"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-            </div>
-            <div className="absolute -bottom-6 -left-6 bg-amber-600 text-white p-4 rounded-xl shadow-xl">
-              <p className="text-3xl font-bold">18+</p>
-              <p className="text-sm">Years of Flavor</p>
-            </div>
-          </motion.div>
-        </motion.div>
-      </div>
-    </section>
-  );
-};
-
-// Menu Preview
-const menuItems = [
-  {
-    name: "Smoked BBQ Ribs",
-    description: "Fall-off-the-bone tender ribs with our secret dry rub and house-made BBQ sauce",
-    price: "$24.99",
-    image: "https://images.unsplash.com/photo-1544025162-d76694265947?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    category: "BBQ"
-  },
-  {
-    name: "Braised Oxtail",
-    description: "Slow-cooked oxtail in rich gravy, served with rice and peas",
-    price: "$28.99",
-    image: "https://images.unsplash.com/photo-1544025162-d76694265947?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    category: "Soul Food"
-  },
-  {
-    name: "Jumbo Wings",
-    description: "Crispy fried wings tossed in your choice of sauce: honey BBQ, buffalo, or lemon pepper",
-    price: "$15.99",
-    image: "https://images.unsplash.com/photo-1562967914-608f82629710?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    category: "Appetizers"
-  },
-  {
-    name: "Mac & Cheese",
-    description: "Creamy five-cheese blend baked to golden perfection",
-    price: "$6.99",
-    image: "https://images.unsplash.com/photo-1543352634-a1c51d9f1fa7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    category: "Sides"
-  },
-  {
-    name: "Rib Dog",
-    description: "Our signature hot dog topped with pulled pork, BBQ sauce, and coleslaw",
-    price: "$12.99",
-    image: "https://images.unsplash.com/photo-1606755962773-d324e0a13086?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    category: "Signature"
-  },
-  {
-    name: "Southern Fried Catfish",
-    description: "Cornmeal-crusted catfish served with tartar sauce and hushpuppies",
-    price: "$18.99",
-    image: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    category: "Seafood"
-  }
-];
-
-const MenuPreview = () => {
-  const { ref, controls } = useScrollAnimation();
-
-  return (
-    <section id="menu" className="py-24 bg-white dark:bg-gray-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          ref={ref}
-          animate={controls}
-          initial="hidden"
-          variants={staggerContainer}
-          className="text-center mb-12"
-        >
-          <motion.span variants={fadeUp} className="text-amber-600 font-semibold text-sm uppercase tracking-wide">
-            Our Menu
-          </motion.span>
-          <motion.h2 variants={fadeUp} className="text-4xl md:text-5xl font-bold mt-2 mb-4 text-gray-900 dark:text-white">
-            Signature <span className="text-amber-600">Dishes</span>
-          </motion.h2>
-          <motion.p variants={fadeUp} className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Crafted with love, slow-smoked to perfection. Here's a taste of what we offer.
-          </motion.p>
-        </motion.div>
-
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate={controls}
-          className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8"
-        >
-          {menuItems.map((item, index) => (
-            <motion.div
-              key={index}
-              variants={fadeUp}
-              whileHover={{ y: -10 }}
-              className="group bg-gray-50 dark:bg-gray-900 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="relative h-56 overflow-hidden">
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
-                />
-                <div className="absolute top-4 right-4 bg-amber-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                  {item.category}
-                </div>
-              </div>
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">{item.name}</h3>
-                  <span className="text-amber-600 font-bold text-lg">{item.price}</span>
-                </div>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">{item.description}</p>
-                <button className="text-amber-600 font-semibold hover:text-amber-700 transition flex items-center gap-1">
-                  Order Now <ChevronRight size={16} />
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        <motion.div variants={fadeUp} className="text-center mt-12">
-          <button className="bg-amber-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-amber-700 transition shadow-lg">
-            View Full Menu
-          </button>
-        </motion.div>
-      </div>
-    </section>
-  );
-};
-
-// Gallery Section
-const galleryImages = [
-  "https://images.unsplash.com/photo-1544025162-d76694265947?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1600891964599-f61ba0e24092?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1562967914-608f82629710?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1543352634-a1c51d9f1fa7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-];
-
-const Gallery = () => {
-  const { ref, controls } = useScrollAnimation();
-
-  return (
-    <section id="gallery" className="py-24 bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          ref={ref}
-          animate={controls}
-          initial="hidden"
-          variants={staggerContainer}
-          className="text-center mb-12"
-        >
-          <motion.span variants={fadeUp} className="text-amber-600 font-semibold text-sm uppercase tracking-wide">
-            Visual Journey
-          </motion.span>
-          <motion.h2 variants={fadeUp} className="text-4xl md:text-5xl font-bold mt-2 mb-4 text-gray-900 dark:text-white">
-            Our <span className="text-amber-600">Atmosphere</span>
-          </motion.h2>
-          <motion.p variants={fadeUp} className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            A glimpse of the flavors and memories waiting for you.
-          </motion.p>
-        </motion.div>
-
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate={controls}
-          className="grid grid-cols-2 md:grid-cols-3 gap-4"
-        >
-          {galleryImages.map((img, index) => (
-            <motion.div
-              key={index}
-              variants={fadeUp}
-              whileHover={{ scale: 1.03 }}
-              className="relative aspect-square rounded-xl overflow-hidden shadow-lg cursor-pointer"
-            >
-              <img src={img} alt={`Gallery ${index + 1}`} className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-black/30 opacity-0 hover:opacity-100 transition duration-300 flex items-center justify-center">
-                <Heart className="text-white" size={32} />
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-      </div>
-    </section>
-  );
-};
-
-// Reviews Section
-const reviews = [
-  {
-    name: "Marcus Johnson",
-    rating: 5,
-    text: "Best soul food I've had outside of my grandma's kitchen! The ribs were fall-off-the-bone tender and the mac & cheese is heavenly.",
-    date: "2 weeks ago"
-  },
-  {
-    name: "Shanice Williams",
-    rating: 5,
-    text: "The oxtail is to die for! Great atmosphere, amazing service, and the drinks were perfect. Will definitely be back!",
-    date: "1 month ago"
-  },
-  {
-    name: "Tyrone Davis",
-    rating: 4,
-    text: "Incredible BBQ and the vibes are unmatched. The Rib Dog is a game changer. Highly recommend!",
-    date: "3 weeks ago"
-  }
-];
-
-const Reviews = () => {
-  const { ref, controls } = useScrollAnimation();
-
-  return (
-    <section id="reviews" className="py-24 bg-white dark:bg-gray-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          ref={ref}
-          animate={controls}
-          initial="hidden"
-          variants={staggerContainer}
-          className="text-center mb-12"
-        >
-          <motion.span variants={fadeUp} className="text-amber-600 font-semibold text-sm uppercase tracking-wide">
-            Testimonials
-          </motion.span>
-          <motion.h2 variants={fadeUp} className="text-4xl md:text-5xl font-bold mt-2 mb-4 text-gray-900 dark:text-white">
-            What Our <span className="text-amber-600">Guests Say</span>
-          </motion.h2>
-        </motion.div>
-
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate={controls}
-          className="grid md:grid-cols-3 gap-8"
-        >
-          {reviews.map((review, index) => (
-            <motion.div
-              key={index}
-              variants={fadeUp}
-              whileHover={{ y: -5 }}
-              className="bg-gray-50 dark:bg-gray-900 p-6 rounded-2xl shadow-md"
-            >
-              <div className="flex gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={18} className={i < review.rating ? "text-yellow-400 fill-current" : "text-gray-300"} />
-                ))}
-              </div>
-              <p className="text-gray-700 dark:text-gray-300 mb-4 italic">"{review.text}"</p>
-              <div className="flex justify-between items-center">
-                <span className="font-semibold text-gray-900 dark:text-white">{review.name}</span>
-                <span className="text-sm text-gray-500">{review.date}</span>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        <motion.div variants={fadeUp} className="text-center mt-8">
-          <div className="inline-flex items-center gap-2 bg-amber-100 dark:bg-amber-900/30 px-6 py-3 rounded-full">
-            <Star className="text-yellow-500 fill-current" />
-            <span className="font-semibold">4.8 ★★★★★ (500+ reviews)</span>
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  );
-};
-
-// Location & Hours
-const LocationHours = () => {
-  const { ref, controls } = useScrollAnimation();
-
-  return (
-    <section id="location" className="py-24 bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          ref={ref}
-          animate={controls}
-          initial="hidden"
-          variants={staggerContainer}
-          className="grid md:grid-cols-2 gap-12"
-        >
-          <motion.div variants={fadeUp}>
-            <span className="text-amber-600 font-semibold text-sm uppercase tracking-wide">Visit Us</span>
-            <h2 className="text-4xl md:text-5xl font-bold mt-2 mb-6 text-gray-900 dark:text-white">
-              Location & <span className="text-amber-600">Hours</span>
-            </h2>
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <MapPin className="text-amber-600 mt-1" size={24} />
-                <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">Address</p>
-                  <p className="text-gray-600 dark:text-gray-300">3074 18th Ave S, St. Petersburg, FL 33712</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <Clock className="text-amber-600 mt-1" size={24} />
-                <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">Opening Hours</p>
-                  <div className="text-gray-600 dark:text-gray-300 space-y-1">
-                    <p>Monday - Thursday: 11am - 10pm</p>
-                    <p>Friday - Saturday: 11am - 12am</p>
-                    <p>Sunday: 12pm - 8pm</p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <Phone className="text-amber-600 mt-1" size={24} />
-                <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">Call Us</p>
-                  <p className="text-gray-600 dark:text-gray-300">(727) 555-0189</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div variants={fadeUp} className="rounded-2xl overflow-hidden shadow-xl h-96">
-            <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3529.123456789012!2d-82.667!3d27.767!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x88c2e1c1c1c1c1c1%3A0x1234567890abcdef!2s3074%2018th%20Ave%20S%2C%20St%20Petersburg%2C%20FL%2033712!5e0!3m2!1sen!2sus!4v1234567890123!5m2!1sen!2sus"
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              allowFullScreen=""
-              loading="lazy"
-              title="Google Map"
-              className="rounded-2xl"
-            ></iframe>
-          </motion.div>
-        </motion.div>
-      </div>
-    </section>
-  );
-};
-
-// Contact Section
-const Contact = () => {
-  const { ref, controls } = useScrollAnimation();
-  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
-    setFormData({ name: '', email: '', message: '' });
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const xPos = (e.clientX - rect.left) / rect.width - 0.5;
+    const yPos = (e.clientY - rect.top) / rect.height - 0.5;
+    x.set(xPos);
+    y.set(yPos);
   };
 
-  return (
-    <section id="contact" className="py-24 bg-white dark:bg-gray-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          ref={ref}
-          animate={controls}
-          initial="hidden"
-          variants={staggerContainer}
-          className="grid md:grid-cols-2 gap-12"
-        >
-          <motion.div variants={fadeUp}>
-            <span className="text-amber-600 font-semibold text-sm uppercase tracking-wide">Get in Touch</span>
-            <h2 className="text-4xl md:text-5xl font-bold mt-2 mb-6 text-gray-900 dark:text-white">
-              We'd Love to <span className="text-amber-600">Hear From You</span>
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
-              Have questions, want to book a private event, or just want to say hi? Drop us a message and we'll get back to you soon.
-            </p>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Phone className="text-amber-600" size={20} />
-                <span className="text-gray-700 dark:text-gray-300">(727) 555-0189</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Send className="text-amber-600" size={20} />
-                <span className="text-gray-700 dark:text-gray-300">hello@thecanopy18.com</span>
-              </div>
-            </div>
-          </motion.div>
+  const [darkMode, setDarkMode] = useState(true);
 
-          <motion.div variants={fadeUp}>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-gray-700 dark:text-gray-300 mb-2 font-medium">Name</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent transition"
-                  placeholder="Your name"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 dark:text-gray-300 mb-2 font-medium">Email</label>
-                <input
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent transition"
-                  placeholder="your@email.com"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 dark:text-gray-300 mb-2 font-medium">Message</label>
-                <textarea
-                  rows={4}
-                  required
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent transition"
-                  placeholder="Tell us anything..."
-                ></textarea>
-              </div>
-              <button
-                type="submit"
-                className="w-full bg-amber-600 text-white py-3 rounded-xl font-semibold hover:bg-amber-700 transition shadow-lg"
-              >
-                Send Message
-              </button>
-              {submitted && (
-                <p className="text-green-600 text-center mt-2">Thanks! We'll be in touch.</p>
-              )}
-            </form>
-          </motion.div>
+  const galleryImages = [
+    "https://lh3.googleusercontent.com/gps-cs-s/AHVAwerQDZayw_NYsLMRh6I7pzZlgwt7BhVtkQFKpbG6qGupvHbihs74qdmOJHG4k0xwBSpcaIdmK24yVDGU78j0yPWrfgj5QYNo0-INHKugDkQHroQVSfaSF5sDlEpqscbv-j_pnN0Y=w172-h224-p-k-no",
+    "https://lh3.googleusercontent.com/gps-cs-s/AHVAwep9PGmMh3WUNcNrIwyIl35sfW7B_YzmRBPifXUfiH4eWkTVEJJYkZK9-22tVapFtG8kV3-_wnxV-WXW4VNIsbnDlLAFVFnCUWsE7W_vV-fI65hKgOdwXC-wvgyIgGaUK1lGlVb2tw=w172-h224-p-k-no",
+    "https://lh3.googleusercontent.com/gps-cs-s/AHVAweokzVzETb__3FJ_QqbVpa8ZA48nhiEUQpq5Sma4whxDgPU7GzZ-NbsR8-6F7ioxAT3OUXMb9VQ93dpDy9Zn9yT3mdCHN8vJIvBkICzz3RtPi-Io5QlqywuE04kR42hYzeiG8RmNEw=w172-h224-p-k-no"
+  ];
+
+  return (
+    <div className={darkMode ? "bg-black text-white" : "bg-white text-black"}>
+      <Particles />
+
+      {/* NAVBAR */}
+      <nav className="fixed w-full z-50 backdrop-blur-2xl bg-black/60 border-b border-white/10">
+        <div className="max-w-7xl mx-auto flex justify-between items-center p-5">
+          <h1 className="text-2xl font-bold tracking-widest text-orange-400">The Canopy 18</h1>
+
+          <div className="hidden md:flex gap-8 text-sm text-neutral-300">
+            <a href="#about">About</a>
+            <a href="#gallery">Gallery</a>
+            <a href="#reviews">Reviews</a>
+            <a href="#contact">Visit</a>
+            <a href="#form">Contact</a>
+          </div>
+
+          <button onClick={() => setDarkMode(!darkMode)} className="px-4 py-2 border rounded-lg">
+            Mode
+          </button>
+        </div>
+      </nav>
+
+      {/* HERO */}
+      <section className="h-screen relative flex items-center justify-center overflow-hidden" onMouseMove={handleMouseMove}>
+        <motion.div style={{ y: yBg }} className="absolute inset-0">
+          <video autoPlay loop muted className="w-full h-full object-cover opacity-60">
+            <source src="https://www.w3schools.com/howto/rain.mp4" type="video/mp4" />
+          </video>
         </motion.div>
-      </div>
-    </section>
-  );
-};
 
-// Footer
-const Footer = () => {
-  return (
-    <footer className="bg-gray-900 text-white py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-4 gap-8">
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Heart className="text-amber-500" fill="currentColor" />
-              <span className="text-xl font-bold">The Canopy 18</span>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black" />
+
+        <motion.div style={{ rotateX, rotateY }} className="relative text-center max-w-4xl transform-gpu">
+          <h2 className="text-6xl md:text-8xl font-extrabold mb-6">
+            Luxury BBQ <span className="text-orange-400">Experience</span>
+          </h2>
+          <p className="text-neutral-300 mb-10">
+            Immersive dining with 3D visuals, motion, and cinematic atmosphere.
+          </p>
+          <a href="#gallery" className="bg-orange-500 px-10 py-4 rounded-xl shadow-2xl hover:scale-110 transition">
+            Explore
+          </a>
+        </motion.div>
+      </section>
+
+      {/* ABOUT */}
+      <section id="about" className="py-40 px-6 relative">
+        <div className="max-w-6xl mx-auto text-center">
+          <h3 className="text-6xl font-extrabold mb-10 text-orange-400 tracking-wide">About Us</h3>
+
+          <p className="text-neutral-300 leading-9 text-lg max-w-3xl mx-auto mb-16">
+            Welcome to The Canopy 18 — where luxury meets flavor. We specialize in slow-smoked barbecue crafted with premium ingredients,
+            bold seasoning, and a passion for unforgettable dining experiences. Every plate is designed to deliver richness, depth,
+            and satisfaction in every bite.
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-10">
+            <div className="p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl transform hover:scale-105 transition">
+              <h4 className="text-2xl font-semibold mb-4 text-orange-400">🔥 Premium Quality</h4>
+              <p className="text-neutral-400 text-sm">Only the finest cuts and ingredients are selected to ensure top-tier taste and consistency.</p>
             </div>
-            <p className="text-gray-400">Authentic soul food & BBQ served with love since 2024.</p>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-4">Quick Links</h4>
-            <ul className="space-y-2 text-gray-400">
-              <li><a href="#home" className="hover:text-amber-400 transition">Home</a></li>
-              <li><a href="#about" className="hover:text-amber-400 transition">About</a></li>
-              <li><a href="#menu" className="hover:text-amber-400 transition">Menu</a></li>
-              <li><a href="#contact" className="hover:text-amber-400 transition">Contact</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-4">Hours</h4>
-            <ul className="space-y-2 text-gray-400">
-              <li>Mon-Thu: 11am-10pm</li>
-              <li>Fri-Sat: 11am-12am</li>
-              <li>Sun: 12pm-8pm</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-4">Follow Us</h4>
-            <div className="flex space-x-4">
-              <a href="#" className="hover:text-amber-400 transition"><Facebook size={24} /></a>
-              <a href="#" className="hover:text-amber-400 transition"><Instagram size={24} /></a>
-              <a href="#" className="hover:text-amber-400 transition"><Twitter size={24} /></a>
+
+            <div className="p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl transform hover:scale-105 transition">
+              <h4 className="text-2xl font-semibold mb-4 text-orange-400">🎯 Crafted Experience</h4>
+              <p className="text-neutral-400 text-sm">From ambiance to plating, every detail is designed to create a unique and immersive dining journey.</p>
+            </div>
+
+            <div className="p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl transform hover:scale-105 transition">
+              <h4 className="text-2xl font-semibold mb-4 text-orange-400">💎 Luxury Atmosphere</h4>
+              <p className="text-neutral-400 text-sm">A modern, elegant environment combined with cinematic visuals and a 3D-inspired aesthetic.</p>
             </div>
           </div>
         </div>
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500">
-          <p>&copy; 2025 The Canopy 18. All rights reserved. Crafted with soul.</p>
+      </section>
+
+      {/* PRICING */}
+      <section id="pricing" className="py-32 px-6">
+        <h3 className="text-5xl font-bold text-center mb-10 text-orange-400">Menu & Pricing</h3>
+
+        {/* Pricing Image Banner */}
+        <div className="max-w-4xl mx-auto mb-16">
+          <a
+            href="https://lh3.googleusercontent.com/gps-cs-s/AHVAwepIaZeW4MZLzIF8rChTllyJiBU3k2eL6Zdgqy4Avsm0ZbGwLlOM-IgZuCin14KtLS3cc7tHGUjdW-j_UBXnHXdpv8V9qd5ylzpPUJCfTRQovjP-yW9GqSDTDesxn1_vSnwyBl-qVA=w112-h112-p-k-no"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img
+              src="https://lh3.googleusercontent.com/gps-cs-s/AHVAwepIaZeW4MZLzIF8rChTllyJiBU3k2eL6Zdgqy4Avsm0ZbGwLlOM-IgZuCin14KtLS3cc7tHGUjdW-j_UBXnHXdpv8V9qd5ylzpPUJCfTRQovjP-yW9GqSDTDesxn1_vSnwyBl-qVA=w112-h112-p-k-no"
+              alt="Pricing Menu"
+              className="w-32 h-32 mx-auto rounded-xl object-cover shadow-2xl border border-white/10 hover:scale-110 transition cursor-pointer"
+            />
+          </a>          <p className="text-center text-neutral-400 mt-4">Explore our full BBQ menu with premium pricing</p>
         </div>
-      </div>
-    </footer>
-  );
-};
 
-// Sticky Order Button
-const StickyOrderButton = () => {
-  return (
-    <motion.button
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      transition={{ delay: 1 }}
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.9 }}
-      className="fixed bottom-6 right-6 z-40 bg-amber-600 text-white p-4 rounded-full shadow-2xl hover:bg-amber-700 transition flex items-center gap-2 group"
-    >
-      <ShoppingBag size={24} />
-      <span className="hidden group-hover:inline font-semibold">Order Now</span>
-    </motion.button>
-  );
-};
+        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-10">
+          <div className="p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl hover:scale-105 transition">
+            <h4 className="text-xl font-semibold text-orange-400 mb-4">🔥 Signature BBQ</h4>
+            <ul className="space-y-2 text-neutral-300 text-sm">
+              <li>Smoked Ribs — $32</li>
+              <li>Brisket Plate — $30</li>
+              <li>Pulled Pork Sandwich — $24</li>
+            </ul>
+          </div>
 
-// Main App Component
-const App = () => {
-  const [darkMode, setDarkMode] = useState(false);
+          <div className="p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl hover:scale-105 transition">
+            <h4 className="text-xl font-semibold text-orange-400 mb-4">🍗 Wings & Combos</h4>
+            <ul className="space-y-2 text-neutral-300 text-sm">
+              <li>6 Wings — $12</li>
+              <li>10 Wings — $18</li>
+              <li>Wing Combo — $22</li>
+            </ul>
+          </div>
 
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
+          <div className="p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl hover:scale-105 transition">
+            <h4 className="text-xl font-semibold text-orange-400 mb-4">🍽 Sides & Extras</h4>
+            <ul className="space-y-2 text-neutral-300 text-sm">
+              <li>Mac & Cheese — $12</li>
+              <li>Collard Greens — $9</li>
+              <li>Fries — $8</li>
+            </ul>
+          </div>
+        </div>
+      </section>
 
-  return (
-    <div className="overflow-x-hidden">
-      <Navbar />
-      <Hero />
-      <About />
-      <MenuPreview />
-      <Gallery />
-      <Reviews />
-      <LocationHours />
-      <Contact />
-      <Footer />
-      <StickyOrderButton />
-      
-      {/* Dark Mode Toggle */}
-      <button
-        onClick={() => setDarkMode(!darkMode)}
-        className="fixed bottom-6 left-6 z-40 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900 p-3 rounded-full shadow-xl hover:scale-110 transition"
-      >
-        {darkMode ? '☀️' : '🌙'}
-      </button>
+      {/* GALLERY */}
+      <section id="gallery" className="py-32 px-6">
+        <h3 className="text-5xl font-bold text-center mb-20 text-orange-400">Gallery</h3>
+
+        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-10">
+          {galleryImages.map((src, i) => (
+            <motion.div
+              key={i}
+              whileHover={{ rotateY: 15, rotateX: 10, scale: 1.1 }}
+              className="rounded-2xl overflow-hidden shadow-2xl border border-white/10 backdrop-blur-xl transform-gpu"
+            >
+              <img src={src} className="w-full h-72 object-cover" />
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* REVIEWS */}
+      <section id="reviews" className="py-32 px-6 bg-neutral-900">
+        <h3 className="text-5xl font-bold text-center mb-20 text-orange-400">Reviews</h3>
+
+        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-10">
+          {["Amazing vibe","Top-tier food","Best experience"].map((r,i)=> (
+            <motion.div
+              key={i}
+              whileHover={{ rotateX: 10, rotateY: -10, scale: 1.05 }}
+              className="p-8 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10"
+            >
+              "{r}"
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* LOCATION */}
+      <section id="contact" className="py-32 px-6">
+        <h3 className="text-5xl font-bold text-center mb-20 text-orange-400">Visit Us</h3>
+
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+          {/* MAP CARD */}
+          <motion.div
+            whileHover={{ scale: 1.02, rotateX: 2, rotateY: -2 }}
+            className="relative w-full h-96 rounded-2xl overflow-hidden border border-white/10 shadow-2xl transform-gpu"
+          >
+            <iframe
+              title="The Canopy 18 Location"
+              src="https://www.google.com/maps?q=3074+18th+Ave+S,+St.+Petersburg,+FL+33712&output=embed"
+              className="w-full h-full"
+              loading="lazy"
+              allowFullScreen
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+
+            {/* Overlay Info */}
+            <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-xl p-4 rounded-xl border border-white/10">
+              <p className="text-sm text-neutral-300 font-semibold">The Canopy 18</p>
+              <p className="text-xs text-neutral-400">3074 18th Ave S, St. Petersburg, FL</p>
+            </div>
+
+            {/* Floating Action Button */}
+            <a
+              href="https://www.google.com/maps?q=3074+18th+Ave+S,+St.+Petersburg,+FL+33712"
+              target="_blank"
+              className="absolute bottom-4 right-4 bg-orange-500 px-5 py-3 rounded-xl shadow-lg hover:scale-110 transition"
+            >
+              Open in Maps
+            </a>
+          </motion.div>
+
+          {/* INFO PANEL */}
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            className="p-10 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-xl"
+          >
+            <h4 className="text-2xl mb-4 text-orange-400">Location Details</h4>
+            <p className="text-neutral-300 mb-6">
+              Visit us for authentic BBQ in a luxury dining atmosphere.
+            </p>
+            <p className="text-neutral-400 mb-2">📍 3074 18th Ave S, St. Petersburg, FL</p>
+            <p className="text-neutral-400 mb-6">⏰ Open daily (check hours before visiting)</p>
+
+            <a
+              href="https://www.google.com/maps?q=3074+18th+Ave+S,+St.+Petersburg,+FL+33712"
+              target="_blank"
+              className="bg-orange-500 px-6 py-3 rounded-xl inline-block hover:scale-110 transition"
+            >
+              Get Directions
+            </a>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* CONTACT FORM */}
+      <section id="form" className="py-32 px-6 bg-neutral-900">
+        <div className="max-w-3xl mx-auto">
+          <h3 className="text-5xl font-bold text-center mb-12 text-orange-400">Contact Us</h3>
+
+          <form className="grid gap-6">
+            <input className="p-5 rounded-xl bg-black/40 border border-white/10" placeholder="Your Name" />
+            <input className="p-5 rounded-xl bg-black/40 border border-white/10" placeholder="Your Email" />
+            <textarea className="p-5 rounded-xl bg-black/40 border border-white/10 h-40" placeholder="Your Message" />
+            <button className="bg-orange-500 py-4 rounded-xl font-semibold hover:scale-105 transition">
+              Send Message
+            </button>
+          </form>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="py-10 text-center text-neutral-500">
+        © {new Date().getFullYear()} The Canopy 18
+      </footer>
     </div>
   );
-};
-
-export default App;
+}
